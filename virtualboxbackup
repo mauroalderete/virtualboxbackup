@@ -83,6 +83,12 @@ virtualboxbackup__backup() {
         exit 1
     fi
 
+    # Check if the virtual machine exist
+    if ! VBoxManage list vms | grep -q "$vm_name"; then
+        echo "The virtual machine $vm_name doesn't exist"
+        exit 1
+    fi
+
     # Check if the virtual machine is turned off
     vm_state=$(VBoxManage showvminfo "$vm_name" --machinereadable | grep VBoxInternal/CPUM/EnableHVP)
     if [[ $vm_state == *'running'* ]]; then
