@@ -73,6 +73,7 @@ virtualboxbackup__backup() {
     local vm_name=""
     local output_dir=""
 
+    # Parse the options
     while getopts ":j:m:d:s:" opt; do
     case ${opt} in
         j )
@@ -95,6 +96,7 @@ virtualboxbackup__backup() {
     esac
     done
 
+    # Validate the options
     if [[ -z "$job_name" ]]; then
         log "Must indicate the job name" "ERROR"
         exit 1
@@ -150,6 +152,7 @@ virtualboxbackup__schedule() {
     local output_dir=""
     local periodicity_value=""
 
+    # Parse the options
     while getopts ":j:m:d:p:" opt; do
     case ${opt} in
         j )
@@ -232,6 +235,7 @@ virtualboxbackup__unschedule() {
 
     local job_name=""
 
+    # Parse the options
     while getopts ":j:m:d:p:" opt; do
     case ${opt} in
         j )
@@ -248,6 +252,7 @@ virtualboxbackup__unschedule() {
     esac
     done
 
+    # Validate the options
     if [[ -z "$job_name" ]]; then
         log "Must indicate the job name" "ERROR"
         exit 1
