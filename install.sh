@@ -1,24 +1,24 @@
 #!/bin/bash
 
-# Nombre del script
+# Name of script
 SCRIPT_NAME="virtualboxbackup"
 
-# Ruta al directorio actual
+# Path to current directory
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Ruta al script
+# Path to script
 SCRIPT_PATH="${DIR}/${SCRIPT_NAME}.sh"
 
-# Comprobar si el script existe
+# Comprobate if the script exists
 if [ ! -f "$SCRIPT_PATH" ]; then
-    echo "No se encontró el script ${SCRIPT_NAME}.sh en el directorio actual."
+    echo "Don't found the script ${SCRIPT_NAME}.sh in the current directory."
     exit 1
 fi
 
-# Copiar el script a /usr/local/bin
-sudo cp "$SCRIPT_PATH" "/usr/local/bin/${SCRIPT_NAME}"
+# Copy the script to /usr/local/bin
+cp "$SCRIPT_PATH" "/usr/local/bin/${SCRIPT_NAME}"
 
-# Dar permisos de ejecución al script
-sudo chmod +x "/usr/local/bin/${SCRIPT_NAME}"
+# Make the script executable
+chmod +x "/usr/local/bin/${SCRIPT_NAME}"
 
-echo "El script ${SCRIPT_NAME} ha sido instalado correctamente."
+echo "The script ${SCRIPT_NAME} has been installed correctly."

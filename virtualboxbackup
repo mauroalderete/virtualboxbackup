@@ -3,6 +3,58 @@
 # Name of the script
 SCRIPT_NAME="virtualboxbackup"
 
+# log function
+# $1: message
+# $2: level
+log() {
+    local message=$1
+    local level=$2
+
+    if [[ "$level" == "ERROR" ]]; then
+        echo "$(date) [ERROR] $message" >&2
+    else
+        echo "$(date) [INFO] $message"
+    fi
+}
+
+
+# Check if the output_dir exist and contains write permissions
+directory_valid(){
+    if [[ ! -d "$1" ]]; then
+        log "The directory $1 doesn't exist" "ERROR"
+        exit 1
+    fi
+
+    if [[ ! -w "$1" ]]; then
+        log "The directory $1 doesn't have write permissions" "ERROR"
+        exit 1
+    fi
+}
+
+# Check if VBoxManage is installed
+vboxmanage_exist(){
+    if ! command -v VBoxManage &> /dev/null; then
+        log "VBoxManage is not installed" "ERROR"
+        exit 1
+    fi
+}
+
+# Check if the virtual machine exist
+vm_exist(){
+    if ! VBoxManage list vms | grep -q "$1"; then
+        log "The virtual machine $1 doesn't exist" "ERROR"
+        exit 1
+    fi
+}
+
+# Check if the virtual machine is running
+vm_running(){
+    if ! VBoxManage list runningvms | grep -q "$1"; then
+        log "The virtual machine $1 is not running" "ERROR"
+        exit 1
+    fi
+}
+
 # Function to execute a backup
 virtualboxbackup__backup() {
 
@@ -21,6 +73,7 @@ virtualboxbackup__backup() {
     local vm_name=""
     local output_dir=""
 
+    # Parse the options
     while getopts ":j:m:d:s:" opt; do
     case ${opt} in
         j )
@@ -33,37 +86,44 @@ virtualboxbackup__backup() {
             output_dir="$OPTARG"
             ;;
         \? )
-            echo "Invalid option: $OPTARG" 1>&2
+            log "Invalid option: $OPTARG" "ERROR"
             exit 1
             ;;
         : )
-            echo "Option $OPTARG require an argument" 1>&2
+            log "Option $OPTARG require an argument" "ERROR"
             exit 1
             ;;
     esac
     done
 
+    # Validate the options
     if [[ -z "$job_name" ]]; then
-        echo "Must indicate the job name"
+        log "Must indicate the job name" "ERROR"
         exit 1
     fi
 
     if [[ -z "$vm_name" ]]; then
-        echo "Must indicate the virtual machine name"
+        log "Must indicate the virtual machine name" "ERROR"
         exit 1
     fi
 
     if [[ -z "$output_dir" ]]; then
-        echo "Must indicate the backup directory"
+        log "Must indicate the backup directory" "ERROR"
         exit 1
     fi
 
-    # Check if the virtual machine is turned off
-    vm_state=$(VBoxManage showvminfo "$vm_name" --machinereadable | grep VBoxInternal/CPUM/EnableHVP)
-    if [[ $vm_state == *'running'* ]]; then
-        echo "La máquina virtual $vm_name está en ejecución. No se puede hacer backup."
-        exit 1
-    fi
+    # Remove the last slash if exist
+    output_dir=${output_dir%/}
+
+    # Check if the output_dir exist and contains write permissions
+    directory_valid "$output_dir"
+
+    # Check if VBoxManage is installed
+    vboxmanage_exist
+    # Check if the virtual machine exist
+    vm_exist "$vm_name"
+    # Check if the virtual machine is running
+    vm_running "$vm_name"
     
     # Create a filename with the current date and time
     filename="${job_name}_$(date +%Y%m%d_%H%M%S).ova"
@@ -92,6 +152,7 @@ virtualboxbackup__schedule() {
     local output_dir=""
     local periodicity_value=""
 
+    # Parse the options
     while getopts ":j:m:d:p:" opt; do
     case ${opt} in
         j )
@@ -107,11 +168,11 @@ virtualboxbackup__schedule() {
             periodicity_value="$OPTARG"
             ;;
         \? )
-            echo "Invalid option: $OPTARG" 1>&2
+            log "Invalid option: $OPTARG" "ERROR"
             exit 1
             ;;
         : )
-            echo "Option $OPTARG require an argument" 1>&2
+            log "Option $OPTARG require an argument" "ERROR"
             exit 1
             ;;
     esac
@@ -119,24 +180,34 @@ virtualboxbackup__schedule() {
 
     # Validate the options
     if [[ -z "$job_name" ]]; then
-        echo "Must indicate the job name"
+        log "Must indicate the job name" "ERROR"
         exit 1
     fi
 
     if [[ -z "$vm_name" ]]; then
-        echo "Must indicate the virtual machine name"
+        log "Must indicate the virtual machine name" "ERROR"
         exit 1
     fi
 
     if [[ -z "$output_dir" ]]; then
-        echo "Must indicate the backup directory"
+        log "Must indicate the backup directory" "ERROR"
         exit 1
     fi
 
     if [[ -z "$periodicity_value" ]]; then
-        echo "Must indicate the periodicity in cronjob format"
+        log "Must indicate the periodicity in cronjob format" "ERROR"
         exit 1
     fi
+
+    # Remove the last slash if exist
+    output_dir=${output_dir%/}
+
+    # Check if the output_dir exist and contains write permissions
+    directory_valid "$output_dir"
+    # Check if VBoxManage is installed
+    vboxmanage_exist
+    # Check if the virtual machine exist
+    vm_exist "$vm_name"
 
     # Call the list function and save the output in a variable
     local list=$(virtualboxbackup__list)
@@ -144,7 +215,7 @@ virtualboxbackup__schedule() {
     # Check if the channel name already exists in the list
     if echo "$list" | grep -q "$job_name"; then
         # Show an error message and end the subcommand
-        echo "The job $job_name already exist."
+        log "The job $job_name already exist." "ERROR"
         return 2
     fi
 
@@ -166,24 +237,26 @@ virtualboxbackup__unschedule() {
 
     local job_name=""
 
+    # Parse the options
     while getopts ":j:m:d:p:" opt; do
     case ${opt} in
         j )
             job_name="$OPTARG"
             ;;
         \? )
-            echo "Invalid option: $OPTARG" 1>&2
+            log "Invalid option: $OPTARG" "ERROR"
             exit 1
             ;;
         : )
-            echo "Option $OPTARG require an argument" 1>&2
+            log "Option $OPTARG require an argument" "ERROR"
             exit 1
             ;;
     esac
     done
 
+    # Validate the options
     if [[ -z "$job_name" ]]; then
-        echo "Must indicate the job name"
+        log "Must indicate the job name" "ERROR"
         exit 1
     fi
 
@@ -193,8 +266,8 @@ virtualboxbackup__unschedule() {
     # Check if the channel name doesn't exist in the list
     if ! echo "$list" | grep -q "$job_name"; then
         # Show an error message and end the subcommand
-        echo "The job $job_name doesn't exists."
-        return 2
+        log "The job $job_name doesn't exists." "ERROR"
+        exit 1
     fi
 
     # Delete the job from the crontab
@@ -204,6 +277,31 @@ virtualboxbackup__unschedule() {
 # Function to list the jobs
 virtualboxbackup__list() {
     crontab -l | grep "$SCRIPT_NAME"
+}
+
+# Function to show a help message
+virtualboxbackup__help() {
+    echo "Usage: $SCRIPT_NAME <command> [options]
+
+Commands:
+    backup      Execute a backup of a virtual machine
+        -j, --job           The name of the job
+        -m, --machine       The name of the virtual machine
+        -d, --directory     The directory to save the backup
+        
+    schedule    Schedule a backup job
+        -j, --job           The name of the job
+        -m, --machine       The name of the virtual machine
+        -d, --directory     The directory to save the backup
+        -p, --periodicity   The periodicity of the backup job in cronjob format
+        
+    unschedule  Unschedule a backup job
+        -j, --job           The name of the job
+
+    list        List all the scheduled backup jobs
+
+    help        Show this help message
+"
 }
 
 # Function to launch the subcommands
@@ -216,11 +314,10 @@ virtualboxbackup_launcher () {
         "virtualboxbackup__$cmd" "$@"
     else
         # Show an error message and end the subcommand
-        echo "Subcommand $cmd unknown" >&2
+        log "Subcommand $cmd unknown" "ERROR"
         exit 1
     fi
 }
-
 
 # If the script is invoked directly, call the launcher function with the passed arguments
 # Verify if the script is being executed or only loaded
