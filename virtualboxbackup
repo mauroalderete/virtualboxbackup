@@ -77,6 +77,12 @@ virtualboxbackup__backup() {
     # Check if the output_dir exist and contains write permissions
     directory_valid "$output_dir"
 
+    # Check if VBoxManage is installed
+    if ! command -v VBoxManage &> /dev/null; then
+        echo "VBoxManage is not installed"
+        exit 1
+    fi
+
     # Check if the virtual machine is turned off
     vm_state=$(VBoxManage showvminfo "$vm_name" --machinereadable | grep VBoxInternal/CPUM/EnableHVP)
     if [[ $vm_state == *'running'* ]]; then
