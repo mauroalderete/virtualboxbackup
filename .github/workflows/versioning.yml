@@ -52,15 +52,6 @@ jobs:
           # Push new tag forcing the update of the minor and major tag
           git push --tag --force
 
-      - name: Setup environment
-        run: echo "commands to setup build environment"
-
-      - name: Build
-        run: echo "command to build"
-
-      - name: Compress build
-        run: echo "command to compress build, tipically tar -zcvf dest.tar.gz orig/"
-
       - name: Create Release from PR
         id: create-release-from-pr
         if: github.event.head_commit.committer.username == 'web-flow'

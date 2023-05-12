@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Nombre del script
+SCRIPT_NAME="virtualboxbackup"
+
+# Función para ejecutar un backup
+do_backup() {
+    local job_name="$1"
+    local vm_name="$2"
+    local output_dir="$3"
+    
+    # Comprobar si la máquina virtual está apagada
+    vm_state=$(VBoxManage showvminfo "$vm_name" --machinereadable | grep VBoxInternal/CPUM/EnableHVP)
+    if [[ $vm_state == *'running'* ]]; then
+        echo "La máquina virtual $vm_name está en ejecución. No se puede hacer backup."
+        exit 1
+    fi
+    
+    # Crear un nombre de archivo con la fecha y hora actual
+    filename="${job_name}_$(date +%Y%m%d_%H%M%S).ova"
+    
+    # Comando para exportar la máquina virtual
+    VBoxManage export "$vm_name" -o "${output_dir}/${filename}"
+}
+
+# Función para programar un backup
+schedule_backup() {
+    local job_name="$1"
+    local vm_name="$2"
+    local output_dir="$3"
+    local schedule="$4"
+
+    # Agregar el job al crontab
+    (crontab -l ; echo "$schedule /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -o $output_dir") | crontab -
+}
+
+# Función para desprogramar un backup
+unschedule_backup() {
+    local job_name="$1"
+
+    # Eliminar el job del crontab
+    crontab -l | grep -v "$SCRIPT_NAME backup -j $job_name" | crontab -
+}
+
+# Función para listar los jobs
+list_jobs() {
+    crontab -l | grep "$SCRIPT_NAME"
+}
+
+# Parsear los argumentos de la línea de comandos
+subcommand="$1"
+shift
+
+while getopts ":j:m:o:s:" opt; do
+    case ${opt} in
+        j )
+            job_name="$OPTARG"
+            ;;
+        m )
+            vm_name="$OPTARG"
+            ;;
+        o )
+            output_dir="$OPTARG"
+            ;;
+        s )
+            schedule="$OPTARG"
+            ;;
+        \? )
+            echo "Opción inválida: $OPTARG" 1>&2
+            exit 1
+            ;;
+        : )
+            echo "Opción $OPTARG requiere un argumento" 1>&2
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND -1))
+
+# Ejecutar el subcomando correspondiente
+case "$subcommand" in
+    backup)
+        do_backup "$job_name" "$vm_name" "$output_dir"
+        ;;
+    schedule)
+        schedule_backup "$job_name" "$vm_name" "$output_dir" "$schedule"
+        ;;
+    unschedule)
+        unschedule_backup "$job_name"
+        ;;
+    list)
+        list_jobs
+        ;;
+    *)
+        echo "Subcomando inválido: $subcommand" 1>&2
+        exit 1
+        ;;
+esac
