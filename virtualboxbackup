@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Nombre del script
+# Name of the script
 SCRIPT_NAME="virtualboxbackup"
 
-# Función para ejecutar un backup
+# Function to execute a backup
 virtualboxbackup__backup() {
 
-    # Transformar las opciones largas en cortas
+    # Transform long options to short options
     for arg in "$@"; do
         shift
         case "$arg" in
@@ -58,24 +58,24 @@ virtualboxbackup__backup() {
         exit 1
     fi
 
-    # Comprobar si la máquina virtual está apagada
+    # Check if the virtual machine is turned off
     vm_state=$(VBoxManage showvminfo "$vm_name" --machinereadable | grep VBoxInternal/CPUM/EnableHVP)
     if [[ $vm_state == *'running'* ]]; then
         echo "La máquina virtual $vm_name está en ejecución. No se puede hacer backup."
         exit 1
     fi
     
-    # Crear un nombre de archivo con la fecha y hora actual
+    # Create a filename with the current date and time
     filename="${job_name}_$(date +%Y%m%d_%H%M%S).ova"
     
-    # Comando para exportar la máquina virtual
-    # VBoxManage export "$vm_name" -o "${output_dir}/${filename}"
-    echo "Start... ${vm_name} ${output_dir}/${filename}"
+    # Command to export the virtual machine
+    VBoxManage export "$vm_name" -o "${output_dir}/${filename}"
 }
 
-# Función para programar un backup
+# Function to schedule a backup
 virtualboxbackup__schedule() {
-    # Transformar las opciones largas en cortas
+    
+    # Transform long options to short options
     for arg in "$@"; do
         shift
         case "$arg" in
@@ -117,6 +117,7 @@ virtualboxbackup__schedule() {
     esac
     done
 
+    # Validate the options
     if [[ -z "$job_name" ]]; then
         echo "Must indicate the job name"
         exit 1
@@ -137,24 +138,24 @@ virtualboxbackup__schedule() {
         exit 1
     fi
 
-    # Llamar a la función de listado y guardar la salida en una variable
+    # Call the list function and save the output in a variable
     local list=$(virtualboxbackup__list)
 
-    # Comprobar si el nombre del canal ya existe en la lista
+    # Check if the channel name already exists in the list
     if echo "$list" | grep -q "$job_name"; then
-        # Mostrar un mensaje de error y terminar el subcomando
+        # Show an error message and end the subcommand
         echo "The job $job_name already exist."
         return 2
     fi
 
-    # Agregar el job al crontab
+    # Add the job to the crontab
     (crontab -l ; echo "$periodicity_value /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -o $output_dir") | crontab -
 }
 
-# Función para desprogramar un backup
+# Function to unschedule a backup
 virtualboxbackup__unschedule() {
 
-    # Transformar las opciones largas en cortas
+    # Transform long options to short options
     for arg in "$@"; do
         shift
         case "$arg" in
@@ -186,36 +187,43 @@ virtualboxbackup__unschedule() {
         exit 1
     fi
 
-    # Llamar a la función de listado y guardar la salida en una variable
+    # Call the list function and save the output in a variable
     local list=$(virtualboxbackup__list)
 
-    # Comprobar si el nombre del canal no existe en la lista
+    # Check if the channel name doesn't exist in the list
     if ! echo "$list" | grep -q "$job_name"; then
-        # Mostrar un mensaje de error y terminar el subcomando
+        # Show an error message and end the subcommand
         echo "The job $job_name doesn't exists."
         return 2
     fi
 
-    # Eliminar el job del crontab
+    # Delete the job from the crontab
     crontab -l | grep -v "$SCRIPT_NAME backup -j $job_name" | crontab -
 }
 
-# Función para listar los jobs
+# Function to list the jobs
 virtualboxbackup__list() {
     crontab -l | grep "$SCRIPT_NAME"
 }
 
-# Función lanzadora que verifica el tipo de subcomando
+# Function to launch the subcommands
 virtualboxbackup_launcher () {
-  local cmd=$1; shift # guardar el primer argumento como el nombre del subcomando y eliminarlo de la lista
-  if type "virtualboxbackup__$cmd" >/dev/null 2>&1; then # verificar si existe una función con el prefijo "dafs__" y el nombre del subcomando
-    "virtualboxbackup__$cmd" "$@" # ejecutar la función del subcomando con los argumentos restantes
-  else
-    echo "Subcommand $cmd unknown" >&2 # mostrar un mensaje de error si no existe la función
-    exit 1
-  fi
+    # save the first argument in a variable and delete it from the argument list
+    local cmd=$1; shift
+    # Verify if exists a function with the prefix "virtualboxbackup__" and the name of the subcommand
+    if type "virtualboxbackup__$cmd" >/dev/null 2>&1; then
+        # Execute the function of the subcommand with the remaining arguments
+        "virtualboxbackup__$cmd" "$@"
+    else
+        # Show an error message and end the subcommand
+        echo "Subcommand $cmd unknown" >&2
+        exit 1
+    fi
 }
 
-# Si el script se invoca directamente, llamar a la función lanzadora con los argumentos pasados
-[[ $_ == $0 ]] && exit # verificar si el script se está ejecutando o solo se está cargando
-virtualboxbackup_launcher "$@" # llamar a la función lanzadora con todos los argumentos
+
+# If the script is invoked directly, call the launcher function with the passed arguments
+# Verify if the script is being executed or only loaded
+[[ $_ == $0 ]] && exit
+# Call the launcher function with all the arguments
+virtualboxbackup_launcher "$@"
