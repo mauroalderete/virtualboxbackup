@@ -206,6 +206,8 @@ virtualboxbackup__schedule() {
     directory_valid "$output_dir"
     # Check if VBoxManage is installed
     vboxmanage_exist
+    # Check if the virtual machine exist
+    vm_exist "$vm_name"
 
     # Call the list function and save the output in a variable
     local list=$(virtualboxbackup__list)
