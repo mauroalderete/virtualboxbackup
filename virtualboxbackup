@@ -220,7 +220,7 @@ virtualboxbackup__schedule() {
     fi
 
     # Add the job to the crontab
-    (crontab -l ; echo "$periodicity_value /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -d $output_dir") | crontab -
+    (crontab -l ; echo "$periodicity_value /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -d $output_dir > /tmp/virtualboxbackup.log 2>&1") | crontab -
 }
 
 # Function to unschedule a backup
