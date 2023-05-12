@@ -4,11 +4,60 @@
 SCRIPT_NAME="virtualboxbackup"
 
 # Función para ejecutar un backup
-do_backup() {
-    local job_name="$1"
-    local vm_name="$2"
-    local output_dir="$3"
-    
+virtualboxbackup__backup() {
+
+    # Transformar las opciones largas en cortas
+    for arg in "$@"; do
+        shift
+        case "$arg" in
+        "--job") set -- "$@" "-j" ;;
+        "--machine") set -- "$@" "-m" ;;
+        "--directory") set -- "$@" "-d" ;;
+        *) set -- "$@" "$arg" ;;
+        esac
+    done
+
+    local job_name=""
+    local vm_name=""
+    local output_dir=""
+
+    while getopts ":j:m:d:s:" opt; do
+    case ${opt} in
+        j )
+            job_name="$OPTARG"
+            ;;
+        m )
+            vm_name="$OPTARG"
+            ;;
+        d )
+            output_dir="$OPTARG"
+            ;;
+        \? )
+            echo "Invalid option: $OPTARG" 1>&2
+            exit 1
+            ;;
+        : )
+            echo "Option $OPTARG require an argument" 1>&2
+            exit 1
+            ;;
+    esac
+    done
+
+    if [[ -z "$job_name" ]]; then
+        echo "Must indicate the job name"
+        exit 1
+    fi
+
+    if [[ -z "$vm_name" ]]; then
+        echo "Must indicate the virtual machine name"
+        exit 1
+    fi
+
+    if [[ -z "$output_dir" ]]; then
+        echo "Must indicate the backup directory"
+        exit 1
+    fi
+
     # Comprobar si la máquina virtual está apagada
     vm_state=$(VBoxManage showvminfo "$vm_name" --machinereadable | grep VBoxInternal/CPUM/EnableHVP)
     if [[ $vm_state == *'running'* ]]; then
@@ -20,38 +69,30 @@ do_backup() {
     filename="${job_name}_$(date +%Y%m%d_%H%M%S).ova"
     
     # Comando para exportar la máquina virtual
-    VBoxManage export "$vm_name" -o "${output_dir}/${filename}"
+    # VBoxManage export "$vm_name" -o "${output_dir}/${filename}"
+    echo "Start... ${vm_name} ${output_dir}/${filename}"
 }
 
 # Función para programar un backup
-schedule_backup() {
-    local job_name="$1"
-    local vm_name="$2"
-    local output_dir="$3"
-    local schedule="$4"
+virtualboxbackup__schedule() {
+    # Transformar las opciones largas en cortas
+    for arg in "$@"; do
+        shift
+        case "$arg" in
+        "--job") set -- "$@" "-j" ;;
+        "--machine") set -- "$@" "-m" ;;
+        "--directory") set -- "$@" "-d" ;;
+        "--periodicity") set -- "$@" "-p" ;;
+        *) set -- "$@" "$arg" ;;
+        esac
+    done
 
-    # Agregar el job al crontab
-    (crontab -l ; echo "$schedule /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -o $output_dir") | crontab -
-}
+    local job_name=""
+    local vm_name=""
+    local output_dir=""
+    local periodicity_value=""
 
-# Función para desprogramar un backup
-unschedule_backup() {
-    local job_name="$1"
-
-    # Eliminar el job del crontab
-    crontab -l | grep -v "$SCRIPT_NAME backup -j $job_name" | crontab -
-}
-
-# Función para listar los jobs
-list_jobs() {
-    crontab -l | grep "$SCRIPT_NAME"
-}
-
-# Parsear los argumentos de la línea de comandos
-subcommand="$1"
-shift
-
-while getopts ":j:m:o:s:" opt; do
+    while getopts ":j:m:d:p:" opt; do
     case ${opt} in
         j )
             job_name="$OPTARG"
@@ -59,40 +100,109 @@ while getopts ":j:m:o:s:" opt; do
         m )
             vm_name="$OPTARG"
             ;;
-        o )
+        d )
             output_dir="$OPTARG"
             ;;
-        s )
-            schedule="$OPTARG"
+        p )
+            periodicity_value="$OPTARG"
             ;;
         \? )
-            echo "Opción inválida: $OPTARG" 1>&2
+            echo "Invalid option: $OPTARG" 1>&2
             exit 1
             ;;
         : )
-            echo "Opción $OPTARG requiere un argumento" 1>&2
+            echo "Option $OPTARG require an argument" 1>&2
             exit 1
             ;;
     esac
-done
-shift $((OPTIND -1))
+    done
 
-# Ejecutar el subcomando correspondiente
-case "$subcommand" in
-    backup)
-        do_backup "$job_name" "$vm_name" "$output_dir"
-        ;;
-    schedule)
-        schedule_backup "$job_name" "$vm_name" "$output_dir" "$schedule"
-        ;;
-    unschedule)
-        unschedule_backup "$job_name"
-        ;;
-    list)
-        list_jobs
-        ;;
-    *)
-        echo "Subcomando inválido: $subcommand" 1>&2
+    if [[ -z "$job_name" ]] || [[ -z "$vm_name" ]] || [[ -z "$output_dir" ]] || [[ -z "$periodicity_value" ]]; then
+        echo "All arguments are required"
         exit 1
-        ;;
-esac
+    fi
+
+    if [[ -z "$job_name" ]]; then
+        echo "Must indicate the job name"
+        exit 1
+    fi
+
+    if [[ -z "$vm_name" ]]; then
+        echo "Must indicate the virtual machine name"
+        exit 1
+    fi
+
+    if [[ -z "$output_dir" ]]; then
+        echo "Must indicate the backup directory"
+        exit 1
+    fi
+
+    if [[ -z "$periodicity_value" ]]; then
+        echo "Must indicate the periodicity in cronjob format"
+        exit 1
+    fi
+
+    # Agregar el job al crontab
+    #(crontab -l ; echo "$periodicity_value /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -o $output_dir") | crontab -
+    echo "Cron... ${periodicity_value} /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -o $output_dir"
+}
+
+# Función para desprogramar un backup
+virtualboxbackup__unschedule() {
+
+    # Transformar las opciones largas en cortas
+    for arg in "$@"; do
+        shift
+        case "$arg" in
+        "--job") set -- "$@" "-j" ;;
+        *) set -- "$@" "$arg" ;;
+        esac
+    done
+
+    local job_name=""
+
+    while getopts ":j:m:d:p:" opt; do
+    case ${opt} in
+        j )
+            job_name="$OPTARG"
+            ;;
+        \? )
+            echo "Invalid option: $OPTARG" 1>&2
+            exit 1
+            ;;
+        : )
+            echo "Option $OPTARG require an argument" 1>&2
+            exit 1
+            ;;
+    esac
+    done
+
+    if [[ -z "$job_name" ]]; then
+        echo "Must indicate the job name"
+        exit 1
+    fi
+
+    # Eliminar el job del crontab
+    #crontab -l | grep -v "$SCRIPT_NAME backup -j $job_name" | crontab -
+    echo "Forget... ${SCRIPT_NAME} backup -j ${job_name}"
+}
+
+# Función para listar los jobs
+virtualboxbackup__list() {
+    crontab -l | grep "$SCRIPT_NAME"
+}
+
+# Función lanzadora que verifica el tipo de subcomando
+virtualboxbackup_launcher () {
+  local cmd=$1; shift # guardar el primer argumento como el nombre del subcomando y eliminarlo de la lista
+  if type "virtualboxbackup__$cmd" >/dev/null 2>&1; then # verificar si existe una función con el prefijo "dafs__" y el nombre del subcomando
+    "virtualboxbackup__$cmd" "$@" # ejecutar la función del subcomando con los argumentos restantes
+  else
+    echo "Subcommand $cmd unknown" >&2 # mostrar un mensaje de error si no existe la función
+    exit 1
+  fi
+}
+
+# Si el script se invoca directamente, llamar a la función lanzadora con los argumentos pasados
+[[ $_ == $0 ]] && exit # verificar si el script se está ejecutando o solo se está cargando
+virtualboxbackup_launcher "$@" # llamar a la función lanzadora con todos los argumentos
