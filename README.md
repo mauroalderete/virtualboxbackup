@@ -1,6 +1,6 @@
 # virtualboxbackup
 
-<h4 align="center">Schedule backups of virtual machine of virtualbox</h4>
+<h4 align="center">VirtualBoxBackup is a script to automate the backups of your VirtualBox virtual machines.</h4>
 
 &nbsp;
 
@@ -36,18 +36,49 @@ Allows you schedule periodical backups of your virtual machine created for Virtu
 - Unschedule periodical backups with cron
 - List all periodical backups registered
 
-# Installation
+## Requirements
 
+The script requires VBoxManage to be installed and in the system's PATH.
+
+## Installation
+
+1. Clone the repository or download the script
 ```bash
 git clone https://github.com/mauroalderete/virtualboxbackup
+```
+
+2. Enter repository folder
+```bash
 cd virtualboxbackup
+```
+
+3. Make the script `install.sh` executable
+```bash
 chmod +x install.sh
+```
+
+4. Run the script `install.sh`. Requires root permissions.
+```bash
 sudo bash install.sh
 ```
 
-# Use
+## Usage
 
-run virtualboxbackup command.
+You can use the script with the following commands:
+
+- `virtualboxbackup backup -j <job_name> -m <machine_name> -d <directory>`: Execute a backup of a virtual machine. All the options are required.
+- `virtualboxbackup schedule -j <job_name> -m <machine_name> -d <directory> -p <periodicity>`: Schedule a backup job. All the options are required.
+- `virtualboxbackup unschedule -j <job_name>`: Unschedule a backup job. The option `-j` is required.
+- `virtualboxbackup list`: List all the scheduled backup jobs.
+- `virtualboxbackup help`: Show a help message.
+
+## Notifications
+
+By default, if a backup job fails, `cron` will try to send an email to the local user account with any output produced during the execution. To read these emails, you can use a command-line email client like `mail`.
+
+## Disclaimer
+
+The script only executes the backups if the virtual machine is turned off. Make sure to turn off your virtual machines before the backup job starts.
 
 ## Code of conduct
 
