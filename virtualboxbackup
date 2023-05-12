@@ -71,6 +71,9 @@ virtualboxbackup__backup() {
         exit 1
     fi
 
+    # Remove the last slash if exist
+    output_dir=${output_dir%/}
+
     # Check if the output_dir exist and contains write permissions
     directory_valid "$output_dir"
 
@@ -153,6 +156,9 @@ virtualboxbackup__schedule() {
         echo "Must indicate the periodicity in cronjob format"
         exit 1
     fi
+
+    # Remove the last slash if exist
+    output_dir=${output_dir%/}
 
     # Check if the output_dir exist and contains write permissions
     directory_valid "$output_dir"
