@@ -3,6 +3,19 @@
 # Name of the script
 SCRIPT_NAME="virtualboxbackup"
 
+# Check if the output_dir exist and contains write permissions
+directory_valid(){
+    if [[ ! -d "$1" ]]; then
+        echo "The directory $1 doesn't exist"
+        exit 1
+    fi
+
+    if [[ ! -w "$1" ]]; then
+        echo "The directory $1 doesn't have write permissions"
+        exit 1
+    fi
+}
+
 # Function to execute a backup
 virtualboxbackup__backup() {
 
@@ -57,6 +70,9 @@ virtualboxbackup__backup() {
         echo "Must indicate the backup directory"
         exit 1
     fi
+
+    # Check if the output_dir exist and contains write permissions
+    directory_valid "$output_dir"
 
     # Check if the virtual machine is turned off
     vm_state=$(VBoxManage showvminfo "$vm_name" --machinereadable | grep VBoxInternal/CPUM/EnableHVP)
@@ -137,6 +153,9 @@ virtualboxbackup__schedule() {
         echo "Must indicate the periodicity in cronjob format"
         exit 1
     fi
+
+    # Check if the output_dir exist and contains write permissions
+    directory_valid "$output_dir"
 
     # Call the list function and save the output in a variable
     local list=$(virtualboxbackup__list)
