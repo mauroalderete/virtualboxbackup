@@ -277,6 +277,31 @@ virtualboxbackup__list() {
     crontab -l | grep "$SCRIPT_NAME"
 }
 
+# Function to show a help message
+virtualboxbackup__help() {
+    echo "Usage: $SCRIPT_NAME <command> [options]
+
+Commands:
+    backup      Execute a backup of a virtual machine
+        -j, --job           The name of the job
+        -m, --machine       The name of the virtual machine
+        -d, --directory     The directory to save the backup
+        
+    schedule    Schedule a backup job
+        -j, --job           The name of the job
+        -m, --machine       The name of the virtual machine
+        -d, --directory     The directory to save the backup
+        -p, --periodicity   The periodicity of the backup job in cronjob format
+        
+    unschedule  Unschedule a backup job
+        -j, --job           The name of the job
+
+    list        List all the scheduled backup jobs
+
+    help        Show this help message
+"
+}
+
 # Function to launch the subcommands
 virtualboxbackup_launcher () {
     # save the first argument in a variable and delete it from the argument list
@@ -291,7 +316,6 @@ virtualboxbackup_launcher () {
         exit 1
     fi
 }
-
 
 # If the script is invoked directly, call the launcher function with the passed arguments
 # Verify if the script is being executed or only loaded
