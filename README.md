@@ -20,7 +20,7 @@
 ·
 <a href="./issues/new/choose">Request Feature</a>
 
-<a href="https://twitter.com/intent/tweet?text=👋%20Check%20this%20amazing%20repo%20https://github.com/mauroalderete/virtualboxbackup,%20created%20by%20@_mauroalderete%0A%0A%Linux%20%VirtualMachine%20%23Virtualbox%20%23DevOps">
+<a href="https://twitter.com/intent/tweet?text=👋%20Check%20this%20amazing%20repo%20https://github.com/mauroalderete/virtualboxbackup,%20created%20by%20@_mauroalderete%0A%0A%bash%20%opensource%20%23virtualbox%20%23devtools">
 	<img src="https://img.shields.io/twitter/url?label=Share%20on%20Twitter&style=social&url=https%3A%2F%2Fgithub.com%2Fatapas%2Fmodel-repo">
 </a>
 
