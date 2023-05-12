@@ -137,15 +137,6 @@ virtualboxbackup__schedule() {
         exit 1
     fi
 
-    # Divide la cadena de cron en un array usando el espacio como delimitador
-    IFS=' ' read -ra CRON_ARRAY <<< "$cron_string"
-
-    # Verifica si la cadena de cron tiene exactamente cinco campos
-    if [ ${#CRON_ARRAY[@]} -ne 5 ]; then
-        echo "The cron format is invalid. Must contain 5 fields."
-        exit 1
-    fi
-
     # Llamar a la función de listado y guardar la salida en una variable
     local list=$(virtualboxbackup__list)
 
@@ -157,8 +148,7 @@ virtualboxbackup__schedule() {
     fi
 
     # Agregar el job al crontab
-    #(crontab -l ; echo "$periodicity_value /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -o $output_dir") | crontab -
-    echo "Cron... ${periodicity_value} /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -o $output_dir"
+    (crontab -l ; echo "$periodicity_value /usr/local/bin/${SCRIPT_NAME} backup -j $job_name -m $vm_name -o $output_dir") | crontab -
 }
 
 # Función para desprogramar un backup
@@ -207,8 +197,7 @@ virtualboxbackup__unschedule() {
     fi
 
     # Eliminar el job del crontab
-    #crontab -l | grep -v "$SCRIPT_NAME backup -j $job_name" | crontab -
-    echo "Forget... ${SCRIPT_NAME} backup -j ${job_name}"
+    crontab -l | grep -v "$SCRIPT_NAME backup -j $job_name" | crontab -
 }
 
 # Función para listar los jobs
