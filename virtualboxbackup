@@ -137,6 +137,15 @@ virtualboxbackup__schedule() {
         exit 1
     fi
 
+    # Divide la cadena de cron en un array usando el espacio como delimitador
+    IFS=' ' read -ra CRON_ARRAY <<< "$cron_string"
+
+    # Verifica si la cadena de cron tiene exactamente cinco campos
+    if [ ${#CRON_ARRAY[@]} -ne 5 ]; then
+        echo "The cron format is invalid. Must contain 5 fields."
+        exit 1
+    fi
+
     # Llamar a la función de listado y guardar la salida en una variable
     local list=$(virtualboxbackup__list)
 
