@@ -117,11 +117,6 @@ virtualboxbackup__schedule() {
     esac
     done
 
-    if [[ -z "$job_name" ]] || [[ -z "$vm_name" ]] || [[ -z "$output_dir" ]] || [[ -z "$periodicity_value" ]]; then
-        echo "All arguments are required"
-        exit 1
-    fi
-
     if [[ -z "$job_name" ]]; then
         echo "Must indicate the job name"
         exit 1
@@ -140,6 +135,16 @@ virtualboxbackup__schedule() {
     if [[ -z "$periodicity_value" ]]; then
         echo "Must indicate the periodicity in cronjob format"
         exit 1
+    fi
+
+    # Llamar a la función de listado y guardar la salida en una variable
+    local list=$(virtualboxbackup__list)
+
+    # Comprobar si el nombre del canal ya existe en la lista
+    if echo "$list" | grep -q "$job_name"; then
+        # Mostrar un mensaje de error y terminar el subcomando
+        echo "The job $job_name already exist."
+        return 2
     fi
 
     # Agregar el job al crontab
@@ -180,6 +185,16 @@ virtualboxbackup__unschedule() {
     if [[ -z "$job_name" ]]; then
         echo "Must indicate the job name"
         exit 1
+    fi
+
+    # Llamar a la función de listado y guardar la salida en una variable
+    local list=$(virtualboxbackup__list)
+
+    # Comprobar si el nombre del canal no existe en la lista
+    if ! echo "$list" | grep -q "$job_name"; then
+        # Mostrar un mensaje de error y terminar el subcomando
+        echo "The job $job_name doesn't exists."
+        return 2
     fi
 
     # Eliminar el job del crontab
