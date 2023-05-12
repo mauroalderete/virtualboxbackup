@@ -7,11 +7,11 @@ SCRIPT_NAME="virtualboxbackup"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Path to script
-SCRIPT_PATH="${DIR}/${SCRIPT_NAME}.sh"
+SCRIPT_PATH="${DIR}/${SCRIPT_NAME}"
 
 # Comprobate if the script exists
 if [ ! -f "$SCRIPT_PATH" ]; then
-    echo "Don't found the script ${SCRIPT_NAME}.sh in the current directory."
+    echo "Don't found the script ${SCRIPT_NAME} in the current directory."
     exit 1
 fi
 
